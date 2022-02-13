@@ -1,0 +1,1416 @@
+#include<stdio.h>
+#include<time.h>
+#include<string.h>
+#include <stdlib.h>
+#include<time.h>
+#define MAX_LIMIT 100
+
+char *orders_file = "orers.txt";
+
+char *foodes_file = "foods.txt";
+
+struct sfood
+{
+	int id;
+	char food_name[MAX_LIMIT];
+	int price;
+	int delete_field;
+	int option;	
+};
+
+struct sorder
+{
+	int id;
+	char customer_name[MAX_LIMIT];
+	char food_name[MAX_LIMIT];
+	char t[MAX_LIMIT];
+	int del;
+	int opt;	
+};
+
+struct sorder get_line_return_sorder_struct(char line[]);
+struct sfood get_line_return_sfood_struct(char line[]);
+struct sfood ret_a_row_of_file_by_id(char *filename,int id);
+void insert_a_order_struct_to_order_database(struct sorder o);
+void print_sfood_struct(struct sfood f);
+void show_all_foods(char *filename);
+void get_info_for_insert_food(char *filename);
+void write_sfood_struct_to_file(struct sfood f,char *filename);
+void gch();
+int l_int(int n);
+int Restaurant_financial_status();
+void get_info_for_find_food(char *filename);
+void find_food(char *filename,char str[]);
+void edit_food(char *filename);
+int count_record_on_file(char *filename);
+int del_new_line(char s[]);
+void Delete_from_file(char *filename);
+struct sorder get_int_row_return_sorder_struct(int row);
+void update_a_record_of_file(char *filename,struct sfood record);
+void update_a_row_of_order_list(struct sorder record);
+void get_info_for_new_order();
+struct sfood return_sfood_struct_by_food_name(char name_s_food[]);
+void show_all_orders();
+void find_orders_users();
+void print_a_sorder_struct(struct sorder o);
+void Delete_a_record_from__order_liist();
+
+
+
+void Sort_menu_foods_according_price()
+{
+	int max_price=-100;
+	
+	
+	struct sfood f;
+	
+	struct sfood max_record;
+	char line[MAX_LIMIT+700];
+	char *name_temp_file="sort_text_temp_file.txt";;
+	
+	FILE *fptr;
+	FILE *temp_file;
+	if ((fptr = fopen(foodes_file,"r")) == NULL)
+		{
+			printf("\nfile have not any record ! \n");
+			return ;
+		}
+
+	
+
+	if ((temp_file = fopen(name_temp_file,"w")) == NULL)
+		{
+			printf("Error ");
+			return ;
+		}
+	
+	/*
+	int id;
+	char food_name[MAX_LIMIT];
+	int price;
+	int delete_field;
+	int option;
+	*/
+	int row=count_record_on_file(foodes_file);
+	int i=0;
+	int a[row+1];
+	for(int j=0;j<row+1;++j)
+	{
+		a[j]=0;
+	}
+	while(1>0)
+	{
+		
+		if(row<=0)break;
+		
+		fptr = fopen(foodes_file,"r");
+
+		while (fgets(line, sizeof(line), fptr)) 
+		{
+				/* note that fgets don't strip the terminating \n, checking its
+				presence would allow to handle lines longer that sizeof(line) */
+
+			f=get_line_return_sfood_struct(line); 
+			
+			if(f.price>=max_price && a[f.id]==0 )
+			{
+				max_price=f.price;
+				max_record.id=f.id;
+				strcpy(max_record.food_name,f.food_name);
+				max_record.price=f.price;				
+				max_record.delete_field=f.delete_field;
+				max_record.option=f.option;
+				//print_sfood_struct(f);					
+			}
+		}
+
+		fclose(fptr);
+		//print_sfood_struct(max_record);	
+		a[max_record.id]=1;			
+	fprintf(temp_file,"%d,%s,%d,%d,%d\n",max_record.id,max_record.food_name,max_record.price,max_record.delete_field,max_record.option);
+		max_record.option=1;
+		row=row-1;
+		max_price=-1;
+		
+	}
+	/* may check feof here to make a difference between eof and io failure -- network
+	timeout for instance */
+	
+
+	fclose(fptr);
+	fclose(temp_file);
+
+
+
+	if ((fptr = fopen(foodes_file,"w")) == NULL)
+		{
+			printf("file have not any record ! ");
+			return ;
+		}
+
+	
+
+	if ((temp_file = fopen(name_temp_file,"r")) == NULL)
+		{
+			printf("Error ");
+			return ;
+		}
+	
+	while (fgets(line, sizeof(line), temp_file)) 
+		{
+			/* note that fgets don't strip the terminating \n, checking its
+			presence would allow to handle lines longer that sizeof(line) */
+			f=get_line_return_sfood_struct(line);//printf("%s", line); 
+			
+			fprintf(fptr,"%d,%s,%d,%d,%d\n",f.id,f.food_name,f.price,f.delete_field,f.option);
+			//fprintf(fptr,"%s\n",line);
+		}
+
+	fclose(fptr);
+	fclose(temp_file);
+
+
+	/*******************************/
+
+	
+
+
+}
+
+void Delete_a_record_from__order_liist()
+{
+	int row;
+
+	show_all_orders();
+	
+	printf("\nPlease Enter number a record for Delete from menu:");
+	
+	scanf("%d",&row);
+
+	struct sorder o;
+
+	o=get_int_row_return_sorder_struct(row);
+
+	if(o.id==-1)
+	{
+		printf("Row Not Exist");
+		return;
+	}
+	else
+	{
+		o.del=1;
+		update_a_row_of_order_list(o);
+	}
+}
+
+
+void get_info_for_edit_a_record_of_order()
+{
+	 char ch;
+
+	struct sorder o;
+	struct sorder t;
+	struct sfood f;
+	int food_number;
+	time_t ti; 
+	time(&ti); 
+	char customer_name[MAX_LIMIT];
+	char food_name[MAX_LIMIT];
+	char time[MAX_LIMIT];
+	int price;
+	int i=0;
+	printf("########### EDIT ORDERS ################");
+	show_all_orders();
+	printf("\nPlease Enter a order number for edit:");
+	scanf("%d",&i);
+	
+	t=get_int_row_return_sorder_struct(i);
+	if(t.id==-1){printf("\nPlease Enter Valid Number !");return;}
+		
+	printf("\nPlease Enter New Customer's Name:");
+	
+	gch();
+	fgets(customer_name, MAX_LIMIT, stdin);
+	//gch();
+	customer_name[del_new_line(customer_name)]='\0';
+	strcpy(o.customer_name,customer_name);
+	//printf("\n*%s*",food_name);
+	show_all_foods(foodes_file);
+	printf("\nin the foods menu enter a food's number for edit :");
+	scanf("%d",&food_number);
+	f=ret_a_row_of_file_by_id(foodes_file,food_number);
+	if(f.id==-1){printf("\nPlease Enter Valid Number !");return;}
+	strcpy(o.food_name,f.food_name);
+	
+	strcpy(time,ctime(&ti));
+	time[del_new_line(time)]='\0';
+	o.id=i;
+	strcpy(o.customer_name,customer_name);
+	strcpy(o.food_name,f.food_name);
+	strcpy(o.t,time);
+	
+	o.del=t.del;
+	o.opt=t.opt;
+	print_a_sorder_struct(o);
+
+	/*f.id=i;
+	strcpy(f.food_name,food_name);
+	f.price=price;
+	f.delete_field=t.delete_field;
+	f.option=t.option;*/
+
+	update_a_row_of_order_list(o);
+	//write_sfood_struct_to_file(f,filename);
+}
+
+struct sfood return_sfood_struct_by_food_name(char name_s_food[])
+{
+	struct sfood f;
+	f.id=-1;
+	char line[MAX_LIMIT+700];
+	FILE *fptr;
+
+	if ((fptr = fopen(foodes_file,"r")) == NULL)
+		{
+			printf("list is empety!");
+
+			// Program exits if the file pointer returns NULL.
+			return f;
+		}
+	
+	while (fgets(line, sizeof(line), fptr)) 
+		{
+			/* note that fgets don't strip the terminating \n, checking its
+			presence would allow to handle lines longer that sizeof(line) */
+			f=get_line_return_sfood_struct(line);//printf("%s", line); 
+			
+			if(strcmp(f.food_name, name_s_food)==0&&f.delete_field==0)
+			{
+				return f;
+			}
+
+			//print_sfood_struct(f);
+			//count++;
+		}
+	/* may check feof here to make a difference between eof and io failure -- network
+	timeout for instance */
+	
+
+	fclose(fptr);
+	
+	f.id=-1;
+	
+	return f;
+
+}
+
+int Restaurant_financial_status()
+{
+	int income=0;
+	struct sorder o;
+	struct sfood f;
+	char line[MAX_LIMIT+700];
+	FILE *fptr;
+	
+	if ((fptr = fopen(orders_file,"r")) == NULL)
+		{
+			printf("\nfile have not any record ! ");
+
+			// Program exits if the file pointer returns NULL.
+			return 0;
+		}
+
+	while (fgets(line, sizeof(line), fptr)) 
+		{
+			/* note that fgets don't strip the terminating \n, checking its
+			presence would allow to handle lines longer that sizeof(line) */
+			o=get_line_return_sorder_struct(line);//printf("%s", line); 
+			f=return_sfood_struct_by_food_name(o.food_name);
+			income=income+f.price;
+
+			
+		}
+
+	fclose(fptr);
+	printf("\nIncome Of Restaurant Is %d",income);
+}
+
+struct sorder get_int_row_return_sorder_struct(int row)
+{
+	/*
+	int id;
+	char customer_name[MAX_LIMIT];
+	char food_name[MAX_LIMIT];
+	char t[MAX_LIMIT];
+	int del;
+	int opt;
+	*/
+	struct sorder o;
+
+	o.id=-1;
+	strcpy(o.customer_name,"Nothing");
+	strcpy(o.food_name,"Nothing");
+	strcpy(o.t,"Nothing");
+	o.del=-1;
+	o.opt=-1;
+
+	char line[MAX_LIMIT+700];
+
+	
+	FILE *fptr;
+	
+	if ((fptr = fopen(orders_file,"r")) == NULL)
+		{
+			printf("\nfile have not any record ! ");
+
+			// Program exits if the file pointer returns NULL.
+			return o;
+		}
+
+	while (fgets(line, sizeof(line), fptr)) 
+		{
+			/* note that fgets don't strip the terminating \n, checking its
+			presence would allow to handle lines longer that sizeof(line) */
+			o=get_line_return_sorder_struct(line);//printf("%s", line); 
+			
+			if(row==o.id)
+			{
+				return o;
+			}
+
+			
+		}
+	
+	o.id=-1;
+	strcpy(o.customer_name,"Nothing");
+	strcpy(o.food_name,"Nothing");
+	strcpy(o.t,"Nothing");
+	o.del=-1;
+	o.opt=-1;
+	/* may check feof here to make a difference between eof and io failure -- network
+	timeout for instance */
+	
+
+	fclose(fptr);
+
+	return o;
+	
+}
+
+void update_a_row_of_order_list(struct sorder record)
+{
+	/******************************/
+	
+	struct sorder o;
+	char line[MAX_LIMIT+700];
+	char *name_temp_file="text_temp_file.txt";;
+	
+	FILE *fptr;
+	FILE *temp_file;
+	if ((fptr = fopen(orders_file,"r")) == NULL)
+		{
+			printf("\nfile Not Exit ! \n");
+
+			// Program exits if the file pointer returns NULL.
+			return ;
+		}
+
+	
+
+	if ((temp_file = fopen(name_temp_file,"w")) == NULL)
+		{
+			printf("Error ");
+
+			// Program exits if the file pointer returns NULL.
+			return ;
+		}
+	
+	/*
+	int id;
+	char food_name[MAX_LIMIT];
+	int price;
+	int delete_field;
+	int option;	
+
+	*/
+	while (fgets(line, sizeof(line), fptr)) 
+		{
+			/* note that fgets don't strip the terminating \n, checking its
+			presence would allow to handle lines longer that sizeof(line) */
+			//struct sorder (char line[])
+			o=get_line_return_sorder_struct(line);//printf("%s", line); 
+				/*
+	int id;
+	char customer_name[MAX_LIMIT];
+	char food_name[MAX_LIMIT];
+	char t[MAX_LIMIT];
+	int del;
+	int opt;
+	
+	*/
+	//(id,custoer_name,food_name,time,delete_feild,option)
+
+			//print_sfood_struct(f);
+			if(o.id==record.id)
+			{
+				strcpy(o.food_name,record.food_name);
+				strcpy(o.customer_name,record.customer_name);
+				//f.food_name=record.food_name;
+				strcpy(o.t,record.t);
+				o.del=record.del;
+				o.opt=record.opt;
+				
+				//print_sfood_struct(f);
+			}
+
+			fprintf(temp_file,"%d,%s,%s,%s,%d,%d\n",o.id,o.customer_name,o.food_name,o.t,o.del,o.opt);
+
+			
+			//write_sfood_struct_to_file( f,char *filename)
+			//print_sfood_struct(f);
+			//count++;
+		}
+	/* may check feof here to make a difference between eof and io failure -- network
+	timeout for instance */
+	
+
+	fclose(fptr);
+	fclose(temp_file);
+
+	if ((fptr = fopen(orders_file,"w")) == NULL)
+		{
+			printf("file have not any record ! ");
+
+			// Program exits if the file pointer returns NULL.
+			return ;
+		}
+
+	
+
+	if ((temp_file = fopen(name_temp_file,"r")) == NULL)
+		{
+			printf("Error ");
+
+			// Program exits if the file pointer returns NULL.
+			return ;
+		}
+	
+	while (fgets(line, sizeof(line), temp_file)) 
+		{
+			/* note that fgets don't strip the terminating \n, checking its
+			presence would allow to handle lines longer that sizeof(line) */
+			o=get_line_return_sorder_struct(line);////printf("%s", line); 
+			
+			
+			//printf("\noption in update function %d",f.option);
+			//fprintf(fptr,"%d,%s,%d,%d,%d\n",f.id,f.food_name,f.price,f.delete_field,f.option);
+			fprintf(fptr,"%d,%s,%s,%s,%d,%d\n",o.id,o.customer_name,o.food_name,o.t,o.del,o.opt);
+
+			
+
+			
+			//write_sfood_struct_to_file( f,char *filename)
+			//print_sfood_struct(f);
+			//count++;
+		}
+
+	fclose(fptr);
+	fclose(temp_file);
+
+
+	/*******************************/
+}
+
+void find_orders_users()
+{
+	char cus_name[MAX_LIMIT];
+	printf("\n#################### FIND ORDER ####################");
+	show_all_orders();
+	printf("\nPlease enter a user's name to find his orders:");
+	scanf("%s",cus_name);
+
+	struct sorder o;
+	char line[MAX_LIMIT+700];
+	FILE *fptr;
+
+	if ((fptr = fopen(orders_file,"r")) == NULL)
+		{
+			printf("list of oeders is empety!");
+
+			// Program exits if the file pointer returns NULL.
+			return ;
+		}
+	
+	while (fgets(line, sizeof(line), fptr)) 
+		{
+			/* note that fgets don't strip the terminating \n, checking its
+			presence would allow to handle lines longer that sizeof(line) */
+			o=get_line_return_sorder_struct(line);//printf("%s", line); 
+			
+			if(strstr(o.customer_name, cus_name)!=NULL&&o.del==0)
+			{
+				print_a_sorder_struct(o);
+			}
+
+			//print_sfood_struct(f);
+			//count++;
+		}
+	/* may check feof here to make a difference between eof and io failure -- network
+	timeout for instance */
+	
+
+	fclose(fptr);
+
+	
+	
+}
+
+
+
+void show_all_orders()
+{
+	//int l1=0,l2=0,l3=0,l4=0,l5=0,l6=0,l7;
+	struct sorder o;
+
+	
+
+	char line[MAX_LIMIT+700];
+	
+	int count=0;
+	FILE *fptr;
+
+	if ((fptr = fopen(orders_file,"r")) == NULL)
+		{
+			printf("exist any order in the list");
+
+
+
+			// Program exits if the file pointer returns NULL.
+
+			return ;
+		}
+
+	printf("\n############## LIST OF ORDERS ####################\n");
+	//printf("\number food\tfood's name\tprice of food");
+	while (fgets(line, sizeof(line), fptr)) 
+		{
+			/* note that fgets don't strip the terminating \n, checking its
+			presence would allow to handle lines longer that sizeof(line) */
+			o=get_line_return_sorder_struct(line);//printf("%s", line); 
+			
+			if(o.del==0)
+			{
+				print_a_sorder_struct(o);
+			}
+			count++;
+		}
+	/* may check feof here to make a difference between eof and io failure -- network
+	timeout for instance */
+	
+
+	fclose(fptr);
+
+	
+	
+}
+
+void print_a_sorder_struct(struct sorder o)
+{
+	//printf("\nid\tname's food\tprice\tdelete field\toption\n");
+	//printf("\nid=%d\tname's food=%s\tprice=%d\tdelete field=%d\toption=%d\n",f.id,f.food_name,f.price,f.delete_field,f.option);
+	//printf("\n%d\t%s\t%d\t%d\t%d\n",f.id,f.food_name,f.price,f.delete_field,f.option);
+	printf("\n");
+	printf("%d",o.id);
+	for(int i=7-l_int(o.id);i>=0;--i)printf(" ");
+	printf("|");
+	printf("%s",o.customer_name);
+	for(int i=20-strlen(o.customer_name);i>=0;--i)printf(" ");
+	printf("|");
+	printf("%s",o.food_name);
+	for(int i=20-strlen(o.food_name);i>=0;--i)printf(" ");
+	printf("|");
+	printf("%s",o.t);
+	printf("\n__________________________________________________________________________________");
+	//printf("\n%d\t%s\t%s\t%s\n",o.id,o.customer_name,o.food_name,o.t);
+	
+}
+
+void insert_a_order_struct_to_order_database(struct sorder o)
+{
+	FILE *fptr;
+
+	// use appropriate location if you are using MacOS or Linux
+
+	fptr = fopen(orders_file,"a");
+
+	if(fptr == NULL)
+	{
+		printf("Error!");   
+		return;             
+	}
+	/*
+	int id;
+	char customer_name[MAX_LIMIT];
+	char food_name[MAX_LIMIT];
+	char t[MAX_LIMIT];
+	int del;
+	int opt;
+	
+	*/
+	//(id,custoer_name,food_name,time,delete_feild,option)
+
+	fprintf(fptr,"%d,%s,%s,%s,%d,%d\n",o.id,o.customer_name,o.food_name,o.t,o.del,o.opt);
+
+	printf("\n>>data inserted in the file<<\n");
+
+	fclose(fptr);
+}
+
+void get_info_for_new_order()
+{
+
+	/*
+	int id;
+	char customer_name[MAX_LIMIT];
+	char food_name[MAX_LIMIT];
+	char t[MAX_LIMIT];
+	int del;
+	int opt;
+	
+	*/
+	//(id,custoer_name,food_name,time,delete_feild,option)
+	time_t t;   // not a primitive datatype
+    	time(&t);
+
+	int food_id;
+	char cus_nam[MAX_LIMIT];
+	char time[MAX_LIMIT];
+	struct sorder o;
+	printf("\n############# ADD ORDER PAGE ###############");
+	show_all_foods(foodes_file);
+	printf("\nType your desired food number (it should match with records in foods database):");
+	scanf("%d",&food_id);
+	struct sfood sf=ret_a_row_of_file_by_id(foodes_file,food_id);
+	if(sf.id==-1){printf("\nInput is not valid");return;}
+	else {printf("\nprice of %s is %d$",sf.food_name,sf.price);}
+	printf("\nType your full name (illegal characters are $,#,@.also it should be less than 30 character):");
+	scanf("%s",cus_nam);
+	printf("\nOreder of %s is %s by %d$",cus_nam,sf.food_name,sf.price);
+	strcpy(time,ctime(&t));//time=ctime(&t);
+	time[del_new_line(time)]='\0';
+	o.id=count_record_on_file(orders_file)+1;
+	
+	strcpy(o.customer_name,cus_nam);
+	strcpy(o.food_name,sf.food_name);//f.food_name=food_name;
+	strcpy(o.t,time);
+	o.del=0;//atoi(del);
+	o.opt=0;//atoi(opt);
+	print_a_sorder_struct(o);
+	insert_a_order_struct_to_order_database(o);
+}
+
+struct sorder get_line_return_sorder_struct(char line[])
+{
+	/*
+	int id;
+	char customer_name[MAX_LIMIT];
+	char food_name[MAX_LIMIT];
+	time_t t;
+	int delete_feild;
+	int option;
+	*/
+	//(id,custoer_name,food_name,time,delete_feild,option)
+	struct sorder o;
+	char id[MAX_LIMIT];
+	char food_name[MAX_LIMIT];
+	char customer_name[MAX_LIMIT];
+	char del[MAX_LIMIT];
+	char opt[MAX_LIMIT];
+	char t[MAX_LIMIT];
+	int index;
+	for(index=0;index<MAX_LIMIT;++index){ id[index]='\0'; }
+	for(index=0;index<MAX_LIMIT;++index){ food_name[index]='\0'; }
+	for(index=0;index<MAX_LIMIT;++index){ customer_name[index]='\0'; }
+	for(index=0;index<MAX_LIMIT;++index){ del[index]='\0'; }
+	for(index=0;index<MAX_LIMIT;++index){ opt[index]='\0'; }
+	for(index=0;index<MAX_LIMIT;++index){ t[index]='\0'; }
+	int i=0,j=0;
+	while(line[i]!=',')
+	{
+		id[j]=line[i];
+		j++;i++;
+	}
+	i++;
+	j=0;
+	while(line[i]!=',')
+
+	{
+
+		customer_name[j]=line[i];
+		i++;
+		j++;
+	}
+	i++;
+	j=0;
+	while(line[i]!=',')
+	{
+		food_name[j]=line[i];
+		i++;
+		j++;
+	}
+	i++;
+	j=0;
+	while(line[i]!=',')
+	{
+		t[j]=line[i];
+		i++;
+		j++;
+	}
+	i++;
+	j=0;
+	while(line[i]!=',')
+	{
+		del[j]=line[i];
+		i++;
+		j++;
+	}
+	i++;
+	j=0;
+	while(1!=0)
+	{	
+		if(line[i]=='\n'||line[i]=='\0')break;
+		opt[j]=line[i];
+		i++;
+		j++;
+	}
+	
+	o.id=atoi(id);
+	strcpy(o.customer_name,customer_name);
+	strcpy(o.food_name,food_name);//f.food_name=food_name;
+	strcpy(o.t,t);
+	o.del=atoi(del);
+	o.opt=atoi(opt);
+	return o;
+
+}
+struct sfood ret_a_row_of_file_by_id(char *filename,int id)
+{
+	struct sfood f;
+
+	f.id=-1;
+	strcpy(f.food_name,"NOTHING");
+	//f.food_name=NULL;
+	f.price=-1;
+	f.delete_field=-1;
+	f.option=-1;
+
+	char line[MAX_LIMIT+700];
+
+	
+	FILE *fptr;
+	
+	if ((fptr = fopen(filename,"r")) == NULL)
+		{
+			printf("\nfile have not any record ! ");
+
+			// Program exits if the file pointer returns NULL.
+			return f;
+		}
+
+	while (fgets(line, sizeof(line), fptr)) 
+		{
+			/* note that fgets don't strip the terminating \n, checking its
+			presence would allow to handle lines longer that sizeof(line) */
+			f=get_line_return_sfood_struct(line);//printf("%s", line); 
+			
+			if(id==f.id)
+			{
+				return f;
+			}
+
+			
+		}
+	
+	f.id=-1;
+	strcpy(f.food_name,"NOTHING");
+	//f.food_name=NULL;
+	f.price=-1;
+	f.delete_field=-1;
+	f.option=-1;
+	/* may check feof here to make a difference between eof and io failure -- network
+	timeout for instance */
+	
+
+	fclose(fptr);
+
+	return f;
+}
+
+//void get_info_for_Delete_from_file(char *filename,int row)
+
+void Delete_from_file(char *filename)
+{
+	int row;
+
+	show_all_foods(filename);
+	
+	printf("\nPlease Enter number a record for Delete from menu:");
+	
+	scanf("%d",&row);
+
+	struct sfood f;
+
+	f=ret_a_row_of_file_by_id(filename,row);
+
+	if(f.id==-1)
+	{
+		printf("Row Not Exist");
+		return;
+	}
+	else
+	{
+		f.delete_field=1;
+		update_a_record_of_file(filename,f);
+	}
+}
+
+void update_a_record_of_file(char *filename,struct sfood record)
+{
+	/******************************/
+	
+	struct sfood f;
+	char line[MAX_LIMIT+700];
+	char *name_temp_file="text_temp_file.txt";;
+	
+	FILE *fptr;
+	FILE *temp_file;
+	if ((fptr = fopen(filename,"r")) == NULL)
+		{
+			printf("\nfile have not any record ! \n");
+
+			// Program exits if the file pointer returns NULL.
+			return ;
+		}
+
+	
+
+	if ((temp_file = fopen(name_temp_file,"w")) == NULL)
+		{
+			printf("Error ");
+
+			// Program exits if the file pointer returns NULL.
+			return ;
+		}
+	
+	/*
+	int id;
+	char food_name[MAX_LIMIT];
+	int price;
+	int delete_field;
+	int option;	
+
+	*/
+	while (fgets(line, sizeof(line), fptr)) 
+		{
+			/* note that fgets don't strip the terminating \n, checking its
+			presence would allow to handle lines longer that sizeof(line) */
+			f=get_line_return_sfood_struct(line);//printf("%s", line); 
+			//print_sfood_struct(f);
+			if(f.id==record.id)
+			{
+				strcpy(f.food_name,record.food_name);
+				//f.food_name=record.food_name;
+				f.price=record.price;
+				f.delete_field=record.delete_field;
+				f.option=record.option;
+				
+				//print_sfood_struct(f);
+			}
+
+			fprintf(temp_file,"%d,%s,%d,%d,%d\n",f.id,f.food_name,f.price,f.delete_field,f.option);
+
+			
+			//write_sfood_struct_to_file( f,char *filename)
+			//print_sfood_struct(f);
+			//count++;
+		}
+	/* may check feof here to make a difference between eof and io failure -- network
+	timeout for instance */
+	
+
+	fclose(fptr);
+	fclose(temp_file);
+
+	if ((fptr = fopen(filename,"w")) == NULL)
+		{
+			printf("file have not any record ! ");
+
+			// Program exits if the file pointer returns NULL.
+			return ;
+		}
+
+	
+
+	if ((temp_file = fopen(name_temp_file,"r")) == NULL)
+		{
+			printf("Error ");
+
+			// Program exits if the file pointer returns NULL.
+			return ;
+		}
+	
+	while (fgets(line, sizeof(line), temp_file)) 
+		{
+			/* note that fgets don't strip the terminating \n, checking its
+			presence would allow to handle lines longer that sizeof(line) */
+			f=get_line_return_sfood_struct(line);//printf("%s", line); 
+			
+			
+			//printf("\noption in update function %d",f.option);
+			fprintf(fptr,"%d,%s,%d,%d,%d\n",f.id,f.food_name,f.price,f.delete_field,f.option);
+
+			
+			//write_sfood_struct_to_file( f,char *filename)
+			//print_sfood_struct(f);
+			//count++;
+		}
+
+	fclose(fptr);
+	fclose(temp_file);
+
+
+	/*******************************/
+}
+
+int l_int(int n)
+{
+	int i=0;
+	while(n>0){n=n/10;i++;}
+	return i;
+}
+
+void print_sfood_struct(struct sfood f)
+{
+	//printf("\nid\tname's food\tprice\tdelete field\toption\n");
+	//printf("\nid=%d\tname's food=%s\tprice=%d\tdelete field=%d\toption=%d\n",f.id,f.food_name,f.price,f.delete_field,f.option);
+	//printf("\n%d\t%s\t%d\t%d\t%d\n",f.id,f.food_name,f.price,f.delete_field,f.option);
+	printf("\n");
+	printf("%d",f.id);
+	for(int i=12-l_int(f.id);i>=0;--i)printf(" ");
+	printf("|");
+	printf("%s",f.food_name);
+	for(int i=30-strlen(f.food_name);i>=0;--i)printf(" ");
+	printf("|");
+	printf("%d",f.price);
+	for(int i=12-l_int(f.price);i>=0;--i)printf(" ");
+	printf("|");
+	printf("\n___________________________________________________________");
+	//printf("\n%d\t%s\t%d\n",f.id,f.food_name,f.price);
+}
+
+
+int del_new_line(char s[])
+{
+	int i;
+	for( i=0;s[i]!='\0';++i)
+	if(s[i]=='\n')return i;
+	return -1;
+	
+}
+
+void edit_food(char *filename)
+{
+	 char ch;
+
+	struct sfood f;
+	struct sfood t;
+	char food_name[MAX_LIMIT];
+	int price;
+	int i=0;
+	printf("########### EDIT ITEM ################");
+	show_all_foods(filename);
+	printf("\nPlease Enter Food's Number For Edit:");
+	scanf("%d",&i);
+	t=ret_a_row_of_file_by_id(filename,i);
+	if(t.id==-1){printf("\nPlease Enter Valid Number !");return;}
+	printf("\nPlease Enter New Food's Name:");
+	
+	gch();
+	fgets(food_name, MAX_LIMIT, stdin);
+	//gch();
+	food_name[del_new_line(food_name)]='\0';
+	//printf("\n*%s*",food_name);
+	printf("\nPlease Enter New Food's Price:");
+	scanf("%d",&price);
+	f.id=i;
+	strcpy(f.food_name,food_name);
+	f.price=price;
+	f.delete_field=t.delete_field;
+	f.option=t.option;
+
+	update_a_record_of_file(filename,f);
+	//write_sfood_struct_to_file(f,filename);
+}
+
+void find_food(char *filename,char food_name[])
+{
+	struct sfood f;
+	char line[MAX_LIMIT+700];
+	FILE *fptr;
+
+	if ((fptr = fopen(filename,"r")) == NULL)
+		{
+			printf("list is empety!");
+
+			// Program exits if the file pointer returns NULL.
+			return ;
+		}
+	
+	while (fgets(line, sizeof(line), fptr)) 
+		{
+			/* note that fgets don't strip the terminating \n, checking its
+			presence would allow to handle lines longer that sizeof(line) */
+			f=get_line_return_sfood_struct(line);//printf("%s", line); 
+			
+			if(strstr(f.food_name, food_name)!=NULL&&f.delete_field==0)
+			{
+				print_sfood_struct(f);
+			}
+
+			//print_sfood_struct(f);
+			//count++;
+		}
+	/* may check feof here to make a difference between eof and io failure -- network
+	timeout for instance */
+	
+
+	fclose(fptr);
+
+	
+	
+}
+ 
+void get_info_for_find_food(char *filename)
+{
+	char food_name[MAX_LIMIT];
+	
+	printf("\nPlease Enter Your Food's Name:");
+
+	scanf("%[^\n]s",food_name);
+	
+	gch();
+
+	//printf("\n*%s*",food_name);
+	
+	find_food(filename,food_name);
+	
+}
+void show_all_foods(char *filename)
+{
+	int l1=0,l2=0,l3=0,l4=0,l5=0,l6=0,l7;
+	struct sfood f;
+
+	
+
+	char line[MAX_LIMIT+700];
+	
+	int count=0;
+	FILE *fptr;
+
+	if ((fptr = fopen(filename,"r")) == NULL)
+		{
+			printf("exist any food in the list");
+
+
+
+			// Program exits if the file pointer returns NULL.
+
+			return ;
+		}
+
+	printf("\n############## LIST OF FOODS ####################\n");
+	//printf("\number food\tfood's name\tprice of food");
+	while (fgets(line, sizeof(line), fptr)) 
+		{
+			/* note that fgets don't strip the terminating \n, checking its
+			presence would allow to handle lines longer that sizeof(line) */
+			f=get_line_return_sfood_struct(line);//printf("%s", line); 
+			
+			if(f.delete_field==0)
+			{
+				print_sfood_struct(f);
+			}
+			count++;
+		}
+	/* may check feof here to make a difference between eof and io failure -- network
+	timeout for instance */
+	
+
+	fclose(fptr);
+
+	
+	
+}
+int csti(char str[])//convert string to int
+{
+	int i;
+	int sum=0;
+	for(i=0;str[i]!='\0';++i)
+	{
+		sum=sum+(str[i]-48);
+		sum=sum*10;
+	}
+	sum=sum/10;
+	return sum;
+}
+
+struct sfood get_line_return_sfood_struct(char line[]) 
+{
+	struct sfood f;
+	char id[MAX_LIMIT];
+	char food_name[MAX_LIMIT];
+	char price[MAX_LIMIT];
+	char delete_field[MAX_LIMIT];
+	char option[MAX_LIMIT];
+	int index;
+	for(index=0;index<MAX_LIMIT;++index){ id[index]='\0'; }
+	for(index=0;index<MAX_LIMIT;++index){ food_name[index]='\0'; }
+	for(index=0;index<MAX_LIMIT;++index){ price[index]='\0'; }
+	for(index=0;index<MAX_LIMIT;++index){ delete_field[index]='\0'; }
+	for(index=0;index<MAX_LIMIT;++index){ option[index]='\0'; }
+	int i=0,j=0;
+	while(line[i]!=',')
+	{
+		id[j]=line[i];
+		j++;i++;
+	}
+	i++;
+	j=0;
+	while(line[i]!=',')
+	{
+		food_name[j]=line[i];
+		i++;
+		j++;
+	}
+	i++;
+	j=0;
+	while(line[i]!=',')
+	{
+		price[j]=line[i];
+		i++;
+		j++;
+	}
+	i++;
+	j=0;
+	while(line[i]!=',')
+	{
+		delete_field[j]=line[i];
+		i++;
+		j++;
+	}
+	i++;
+	j=0;
+	while(1!=0)
+	{	
+		if(line[i]=='\n'||line[i]=='\0')break;
+		option[j]=line[i];
+		i++;
+		j++;
+	}
+	char str[10] = "122";
+	int x = atoi(str);
+	/*
+	int id;
+	char food_name[MAX_LIMIT];
+	int price;
+	int delete_field;
+	int option;	
+
+	*/
+	f.id=atoi(id);
+	strcpy(f.food_name,food_name);//f.food_name=food_name;
+	f.price=atoi(price);
+	f.delete_field=atoi(delete_field);
+	f.option=atoi(option);
+	return f;
+}
+ 
+
+void write_sfood_struct_to_file(struct sfood f,char *filename)
+{
+	FILE *fptr;
+
+	// use appropriate location if you are using MacOS or Linux
+
+	fptr = fopen(filename,"a");
+
+	if(fptr == NULL)
+	{
+		printf("Error!");   
+		return;             
+	}
+	/*
+	int id;
+	char food_name[MAX_LIMIT];
+	int price;
+	int delete_field;
+	int option;	
+
+	
+	*/
+
+	fprintf(fptr,"%d,%s,%d,%d,%d\n",f.id,f.food_name,f.price,f.delete_field,f.option);
+
+	printf("\n>>data inserted in the file<<\n");
+
+	fclose(fptr);
+
+}
+int count_record_on_file(char *filename)
+{
+
+	struct sfood f;
+	//f=get_line_return_sfood_struct("12,morgh,34590,0,0");
+	//print_sfood_struct(f);
+	char line[MAX_LIMIT+700];
+
+	int count=0;
+	FILE *fptr;
+
+	if ((fptr = fopen(filename,"r")) == NULL)
+		{
+			//printf("Error! opening file");
+
+			// Program exits if the file pointer returns NULL.
+			return 0;
+		}
+
+	
+	while (fgets(line, sizeof(line), fptr)) 
+		{
+			/* note that fgets don't strip the terminating \n, checking its
+			presence would allow to handle lines longer that sizeof(line) */
+			//f=get_line_return_sfood_struct(line);//printf("%s", line); 
+			//print_sfood_struct(f);
+			count++;
+		}
+	/* may check feof here to make a difference between eof and io failure -- network
+	timeout for instance */
+	
+
+	fclose(fptr);
+
+	return count;
+}
+void gch()
+{
+	while ((getchar()) != '\n');
+}
+
+void get_info_for_insert_food(char *filename)
+{
+	struct sfood f;
+	char f_n[MAX_LIMIT];
+	int price;
+	printf("\n########## ADD FOOD PAGE #########\n");
+	printf("\nType new food name ( invalid characters are $, # , @ . also it should be less than 30 character):");
+	scanf("%[^\n]s",f_n);
+	gch();
+	printf("\nType new food price ( leading zeros are ignored , also the number should be saved in integer ) :");
+	scanf("%d",&price);
+	strcpy( f.food_name, f_n);
+	f.price=price;
+	//printf("\n%s->%d\n",f.food_name,f.price);
+	int number_record=count_record_on_file(filename);
+	//printf("\nnr=%d",number_record);
+	f.id=number_record+1;
+	f.delete_field=0;
+	f.option=0;
+	//print_sfood_struct(f);
+	write_sfood_struct_to_file(f,filename);
+	/*
+	int id;
+	char food_name[MAX_LIMIT];
+	int price;
+	int delete_feild;
+	int option;
+	/*/
+	//printf("%s",f_n);
+}
+
+void print_home_page()
+{
+	
+	printf("\n############### HOME PAGE #############");
+	printf("\n1.Food:");
+	printf("\n\t11.Show all foods");
+	printf("\n\t12.Add new food");
+	printf("\n\t13.Find Food");
+	printf("\n\t14.Edit Food");
+	printf("\n\t15.Delete Food");
+	printf("\n\t16.Sort Foods");
+	printf("\n2.Order:");
+	printf("\n\t21.Show order");
+	printf("\n\t22.New order");
+	printf("\n\t23.Find order");
+	printf("\n\t24.Edit order");
+	printf("\n\t25.Delete order");
+	printf("\n3.Restaurant financial status");
+	printf("\n4.Exit");
+
+}
+
+
+void main()
+{
+	
+	
+	
+	
+	char *foodes_file = "foods.txt";
+
+	int choice;
+	
+	
+	//printf("%d",l_int(43566));
+	
+	
+	do{	
+
+	system("cls");
+
+	print_home_page();	
+
+	printf("\nEnter your choice:");
+	
+	scanf("%d",&choice);
+	
+	gch();
+
+	if(choice==11){show_all_foods(foodes_file);getchar();}
+
+	else if(choice==12){get_info_for_insert_food(foodes_file);getchar();}
+
+	else if(choice==13){get_info_for_find_food(foodes_file);getchar();}
+
+	else if(choice ==14){ edit_food(foodes_file);getchar();}
+
+	else if(choice==15){Delete_from_file(foodes_file);getchar();}
+
+	else if(choice==16){/**/Sort_menu_foods_according_price();show_all_foods(foodes_file);getchar();}
+
+	else if(choice==22){get_info_for_new_order();getchar();}
+
+	else if(choice==21){show_all_orders();getchar();}
+
+	else if(choice==23){find_orders_users();getchar();getchar();}
+	
+	else if(choice==24){get_info_for_edit_a_record_of_order();getchar();}
+
+	else if(choice==25){Delete_a_record_from__order_liist();getchar();}
+
+	else if(choice==3){Restaurant_financial_status();getchar();}
+
+	}while(choice!=4);
+	
+}
